@@ -20,7 +20,7 @@ def fall_with_drag(height: float, gravity: float, mass: float, drag_coeff: float
     current_height = height
 
     while current_height > 0:
-        # drag force: f_d = 0.5 * r * C_d * A * v^2
+        # drag force: f_d = 0.5 * r * c_d * a * v^2
         drag_force = drag_factor * (velocity ** 2) #calculating drag force
         
         # gravitational force: f_g = m * g
@@ -37,10 +37,10 @@ def fall_with_drag(height: float, gravity: float, mass: float, drag_coeff: float
     return time_taken, velocity
 
 def main():
-    parser = argparse.ArgumentParser(description="Calculate drop time and final velocity with optional air resistance.")
+    parser = argparse.ArgumentParser(description="calculate drop time and final velocity with air resistance.")
     
     # the arguments that arg can parse haha
-    parser.add_argument("-H", "--height", type=float, required=True, help="initial height from which the ball is droppe (meters)")
+    parser.add_argument("-H", "--height", type=float, required=True, help="initial height from which the ball is dropped (meters)")
     
     # the fun stuff... gravity mass drag area
     #for each one i set a default so that the arguments are optional

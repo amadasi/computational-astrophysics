@@ -19,7 +19,8 @@ def main():
     
     parser.add_argument("-g", "--gravity", type=float, default=9.81, help="acceleration due to gravity (default: 9.81 m/s^2, use 32.2 for ft/s^2)")
     #adding an argparse thing to call and set gravity
-    
+
+    #adding something if an unacceptable value is inputted
     args = parser.parse_args()
     
     if args.height < 0:
