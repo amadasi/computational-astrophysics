@@ -1,0 +1,63 @@
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+
+def simp_integrate(a, b, N, y):
+    # N has to be even
+    if N % 2 != 0:
+        N += 1
+        
+    delta_t = (b - a) / N
+    
+    k1 = np.arange(int(N / 2))
+    k2 = np.arange(int(N / 2 - 1))
+    
+
+    sum_S1 = np.sum(y(a + (2 * k1 + 1) * delta_t))
+    sum_S2 = np.sum(y(a + (2 * k2 + 2) * delta_t))
+    
+    simp_F = (delta_t / 3) * (y(a) + y(b) + 4 * sum_S1 + 2 * sum_S2)
+    
+    return simp_F, N
+
+def main():
+    parser = argparse.ArgumentParser(description="Calculate and plot the definite integral of a function using the Simpson Rule.")
+    parser.add_argument("-a", type=float, default=0.0, help="Integration start point 'a' (default: 0.0)")
+    parser.add_argument("-b", type=float, default=3.0, help="Integration end point 'b' (default: 3.0)")
+    parser.add_argument("-N", type=int, default=100, help="Number of intervals 'N' - must be even (default: 100)")
+    parser.add_argument("--func", type=str, default="np.exp(-t**2)", help="Mathematical function using variable 't' in Python syntax (default: 'np.exp(-t**2)')")
+    args = parser.parse_args()
+
+    try:
+        function_class_S = lambda t: eval(args.func, {"np": np, "t": t})
+        function_class_S(args.a)  
+    except Exception as e:
+        print(f"Syntax Error in formula expression '{args.func}': {e}")
+        return
+
+    #integrating
+    area_result, N_used = simp_integrate(args.a, args.b, args.N, function_class_S)
+    
+    if N_used != args.N:
+        print(f"[Warning]: Simpson's rule requires an even N. Adjusted N from {args.N} to {N_used}.")
+
+    print(f"\nParameters Used: a={args.a}, b={args.b}, N={N_used}")
+    print(f"Function evaluated: {args.func}")
+    print(f"[Calculated Simpson Area]: {area_result:.6f}")
+
+    # graphing
+    t_curve = np.linspace(args.a, args.b, 300)
+    y_curve = function_class_S(t_curve)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(t_curve, y_curve, label=f"$y = {args.func}$", color="hotpink", lw=2)
+    plt.title("Simpson's Method Integration Plot", fontsize=14)
+    plt.xlabel("t", fontsize=12)
+    plt.ylabel("y", fontsize=12)
+    plt.grid(True, linestyle=":", alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+
+if __name__ == "__main__":
+    main()
+

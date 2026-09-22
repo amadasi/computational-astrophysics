@@ -1,0 +1,57 @@
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+
+def trap_integrate(a, b, N, y_func):
+    delta_x = (b - a) / N
+    
+    #the amount of slices
+    k = np.arange(1, N)
+    sum_T = np.sum(y_func(a + k * delta_x))
+    
+    trap_F = delta_x * (((1 / 2) * (y_func(a) + y_func(b))) + sum_T)
+    return trap_F
+
+def main():
+    parser = argparse.ArgumentParser(description="Calculate and plot the definite integral of a function using the Trapezoidal Rule.") 
+    parser.add_argument("-a", type=float, default=0.0, help="Integration start point (default: 0.0)")
+    parser.add_argument("-b", type=float, default=3.0, help="Integration end point (default: 3.0)")
+    parser.add_argument("-N", type=int, default=100, help="Number of trapezoidal slices (default: 100)")
+    parser.add_argument("--func", type=str, default="np.exp(-x**2)", help="Mathematical function of x to integrate in Python syntax (default: 'np.exp(-x**2)')")
+
+    args = parser.parse_args()
+
+    try:
+        function_class_T = lambda x: eval(args.func, {"np": np, "x": x})
+        
+        function_class_T(args.a)
+    except Exception as e:
+        print(f"Error evaluating function syntax '{args.func}': {e}")
+        print("Ensure you use Python syntax like 'x**2' for powers or functions like 'np.sin(x)'.")
+        return
+
+    area_result = trap_integrate(args.a, args.b, args.N, function_class_T)
+    print(f"\nParameters Used: a={args.a}, b={args.b}, N={args.N}")
+    print(f"Function evaluated: {args.func}")
+    print(f"[Calculated Integral Area]: {area_result:.6f}")
+
+    # attempting graph
+    x_curve = np.linspace(args.a, args.b, 300)
+    y_curve = function_class_T(x_curve)
+
+    x_slices = np.linspace(args.a, args.b, args.N + 1)
+    y_slices = function_class_T(x_slices)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(x_curve, y_curve, label=f"$y = {args.func}$", color="hotpink", lw=2)
+
+    plt.title(f"Trapezoidal Rule Integration", fontsize=14)
+    plt.xlabel("x", fontsize=12)
+    plt.ylabel("y", fontsize=12)
+    plt.grid(True, linestyle=":", alpha=0.6)
+    plt.legend(fontsize=12)
+    plt.show()
+
+if __name__ == "__main__":
+    main()
+
