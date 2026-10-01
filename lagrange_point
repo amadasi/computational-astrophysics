@@ -1,0 +1,75 @@
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+parser = argparse.ArgumentParser(
+    description="Calculate Earth-Moon Lagrange Points using Newton and Secant methods.")
+parser.add_argument("--guess1", type=float, default=3.2e8, help="Initial guess for Newton's method or first guess for Secant method (in meters)")
+parser.add_argument("--guess2", type=float, default=3.0e8, help="Second initial guess required for the Secant method (in meters)")
+
+args = parser.parse_args()
+
+G = 6.6743e-11
+M = 5.97219e24  # kgs (mass of earth)
+m = 7.348e22  # kgs (mass of moon)
+R = 3.844e8  # m
+w = 2.662e-6  # s^-1
+c = 3e8  # m/s
+
+
+def L1(r):
+    return (G * M) / (r**2) - (G * m) / ((R - r) ** 2) - (w**2) * r
+
+
+def dL1(r):
+    return (-2 * G * M) / (r**3) + (2 * G * m) / ((R - r) ** 3) - w**2
+
+
+def L2(r):
+    return (G * M) / (r**2) + (G * m) / ((r - R) ** 2) - (w**2) * r
+
+
+def dL2(r):
+    return (-2 * G * M) / (r**3) - (2 * G * m) / ((r - R) ** 3) - w**2
+
+
+
+def newtonmethod(x, dx, r_guess):
+    r = r_guess
+    error = 999
+    while error > 1e-3:
+        guess = x(r)
+        dguess = dx(r)
+
+        nm = r - guess / dguess
+        error = np.abs(r - nm)
+        r = nm
+
+    return r
+
+
+def secantmethod(x, r_guess1, r_guess2):
+    r1 = r_guess1
+    r2 = r_guess2
+    error = 999
+    while error > 1e-3:
+        f1 = x(r1)
+        f2 = x(r2)
+
+        sm1 = (f2 - f1) / (r2 - r1)
+        sm2 = r2 - f2 / sm1  # fixed the Secant method uses f2 here when starting from r2
+
+        error = np.abs(sm2 - r2)
+        r1 = r2
+        r2 = sm2
+
+    return r2
+
+
+
+l1_newton = newtonmethod(L1, dL1, args.guess1)
+l1_secant = secantmethod(L1, args.guess1, args.guess2)
+
+print(f"L1 Point (Newton's Method): {l1_newton:.4e} meters")
+print(f"L1 Point (Secant Method):   {l1_secant:.4e} meters")
