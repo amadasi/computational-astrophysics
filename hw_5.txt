@@ -1,0 +1,154 @@
+# Homework 4 - Fourier Analysis Time Series Analysis
+
+import argparse
+from astropy.io import fits
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.interpolate import interp1d
+
+# --- Terminal Argument Parsing ---
+parser = argparse.ArgumentParser(description='Analyze eclipsing binaries and orbital periods using Fourier Analysis.')
+parser.add_argument('--filename', type=str, default='tic0003921749.fits', help='Path to the FITS file (default: tic0003921749.fits)')
+parser.add_argument('--tmin', type=float, default=2400.0, help='Minimum time (BJD) for the analysis mask (default: 2400)')
+parser.add_argument('--tmax', type=float, default=2550.0, help='Maximum time (BJD) for the analysis mask (default: 2550)')
+args = parser.parse_args()
+
+# --- Reading the FITS file ---
+filename = args.filename
+hdul = fits.open(filename)
+times = hdul[1].data['times']
+fluxes = hdul[1].data['fluxes']
+ferrs = hdul[1].data['ferrs']
+
+# 1. Raw Light Curve Plots
+plt.figure(figsize=(12, 5))
+plt.scatter(times, fluxes, s=1.9)
+plt.xlabel('Time (BJD)')  # BJD - Barycentric Julia Date
+plt.ylabel('Flux')
+plt.title('TIC 3921749 (Scatter)')
+plt.show()
+
+plt.figure(figsize=(12, 5))
+plt.plot(times, fluxes)
+plt.xlabel('Time (BJD)')
+plt.ylabel('Flux')
+plt.title('TIC 3921749 (Line)')
+plt.show()
+
+# 2. Normalizing Flux
+flux_normalized = fluxes / np.median(fluxes)
+
+plt.figure(figsize=(12, 5))
+plt.scatter(times, flux_normalized, s=1.9)
+plt.xlabel('Time (BJD)')
+plt.ylabel('Normalized Flux')
+plt.title('TIC 3921749 - Normalized')
+plt.show()
+
+
+# --- Functions for Fourier Analysis ---
+def dft_star(y):
+  N = len(y)
+  N_real = N // 2 + 1
+  c = np.zeros(N_real, dtype='complex')
+  for k in range(N_real):
+    for n in range(N):
+      c[k] += y[n] * np.exp(-2j * np.pi * k * n / N)  # fourier coefficients
+  return c
+
+
+def inverse_dft(c_full, N):
+  y = np.zeros(N, dtype='complex')
+  for k in range(N):
+    for n in range(N):
+      y[n] += c_full[k] * np.exp(2j * np.pi * k * n / N)
+  return (y / N).real
+
+
+# --- Applying Mask Based on CLI Arguments ---
+mask = (times >= args.tmin) & (times <= args.tmax)
+times_new = times[mask]
+fluxes_new = fluxes[mask]
+ferrs_new = ferrs[mask]
+
+# 3. Fourier Transform & Power Spectrum
+c = dft_star(fluxes_new)
+
+plt.figure(figsize=(12, 5))
+plt.plot(times_new, fluxes_new, linewidth=1)
+plt.xlabel('Time (BJD)')
+plt.ylabel('Flux')
+plt.title(f'TIC 3921749 Fourier Transform (Range: {args.tmin}-{args.tmax})')
+plt.grid(True, alpha=0.3)
+plt.show()
+
+abs_c = abs(c) ** 2  # Power spectrum
+print(f'Power spectrum first 2 values: {abs_c[0:2]}')
+k = np.arange(len(c))
+abs_c[0] = 0
+
+plt.figure(figsize=(10, 5))
+plt.ylabel('$|c|^2$')
+plt.xlabel('k')
+plt.title('TIC 3921749 Power Spectrum')
+plt.plot(k, abs_c)
+plt.show()
+
+# 4. Inverse DFT & Comparison
+N = len(fluxes_new)
+N_real = len(c)
+
+c_full = np.zeros(N, dtype='complex')
+c_full[:N_real] = c
+
+if N % 2 == 0:
+  c_full[N_real:] = np.conj(c[-2:0:-1])
+else:
+  c_full[N_real:] = np.conj(c[-1:0:-1])
+
+inverse_flux = inverse_dft(c_full, N)
+
+plt.figure(figsize=(14, 5))
+plt.plot(times_new, inverse_flux, 'r-', linewidth=1)
+plt.xlabel('Time (BJD)')
+plt.ylabel('Flux')
+plt.title('TIC 3921749 Inverse Transform')
+plt.grid(True, alpha=0.3)
+plt.show()
+
+plt.figure(figsize=(14, 5))
+plt.plot(times_new, fluxes_new, 'b.', markersize=2, alpha=0.5, label='Original Data')
+plt.plot(times_new, inverse_flux, 'r-', linewidth=1, label='Inverse DFT')
+plt.xlabel('Time (BJD)')
+plt.ylabel('Flux')
+plt.title('TIC 3921749 Inverse Transform Comparison')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+
+# 5. Interpolation Example
+dt = np.diff(times_new)
+median_dt = np.median(dt)
+times_uniform = np.arange(times_new[0], times_new[-1], median_dt)
+
+f_interp = interp1d(times_new, fluxes_new, kind='linear', fill_value='extrapolate')
+fluxes_uniform = f_interp(times_uniform)
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8))
+
+ax1.scatter(times_new, fluxes_new, s=2, alpha=0.6, label='Original (with gaps)')
+ax1.set_ylabel('Flux')
+ax1.set_title('Original Data with Missing Points')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+ax2.scatter(times_new, fluxes_new, s=2, alpha=0.6, label='Original data')
+ax2.plot(times_uniform, fluxes_uniform, 'r-', linewidth=0.5, label='Interpolated')
+ax2.set_xlabel('Time (BJD)')
+ax2.set_ylabel('Flux')
+ax2.set_title('After Linear Interpolation')
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
