@@ -9,9 +9,7 @@ At each scattering (isotropic, low-energy Thomson regime) the new direction
 cosine mu = cos(theta) is uniform on [-1, 1] and the azimuth phi is uniform
 on [0, 2*pi).  The photon is followed until it leaves the slab either out the
 back (z > L, "transmitted") or back out the front (z < 0, "reflected").
-
-Examples
---------
+--------------------------------------------------------------------------------
     python mc_photon_slab.py                       # defaults, shows animation
     python mc_photon_slab.py --seed 3 --save photon.gif --no-show
     python mc_photon_slab.py --n-photons 20000 --no-animation
